@@ -2,11 +2,8 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 class VentasProductoRow(BaseModel):
-    # --- AGREGAMOS ESTOS DOS CAMPOS ---
     fecha: Optional[str] = None
     hora: Optional[str] = None
-    # ----------------------------------
-    
     Mes: str
     id_pro: int
     CCODIGOPRODUCTO: str
@@ -19,6 +16,7 @@ class VentasProductoRow(BaseModel):
     impuesto: float
     Total: float
     CNOMBREALMACEN: Optional[str] = None
+    Folio: Optional[str] = None # Agregamos Folio por si acaso
 
 class ProductoOpcion(BaseModel):
     id_pro: int
@@ -43,9 +41,24 @@ class VentasPorSucursalItem(BaseModel):
     sucursal: Optional[str]
     total_vendido: float
 
+# --- CLASES NUEVAS QUE FALTABAN ---
+
+class VentaPorHoraItem(BaseModel):
+    hora: int
+    total_vendido: float
+    transacciones: int
+
+class TopProducto(BaseModel):
+    codigo: str
+    producto: str
+    total_vendido: float
+    cantidad_vendida: float
+
 class VentasProductoKpis(BaseModel):
     total_vendido: float
     unidades_vendidas: float
     productos_distintos: int
+    # Nuevo campo agregado
+    ticket_promedio: float = 0.0
     sucursal_top: Optional[str] = None
     sucursal_top_total: Optional[float] = None

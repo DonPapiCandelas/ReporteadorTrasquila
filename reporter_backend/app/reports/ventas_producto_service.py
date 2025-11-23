@@ -9,7 +9,7 @@ from app.schemas.reports import VentasProductoFiltros
 # Configuración de Bitácora
 logger = logging.getLogger("uvicorn.error")
 
-# ----------------- Helper para filtros (VERSIÓN FINAL CONSOLIDADA) -----------------
+# ----------------- Helper para filtros (Versión Híbrida) -----------------
 
 def _build_filtros_where(
     sucursal: Optional[str] = None,
@@ -18,21 +18,23 @@ def _build_filtros_where(
     fecha_hasta: Optional[Any] = None,
     mes: Optional[int] = None,
     anio: Optional[int] = None,
+    es_vista_resumen: bool = False 
 ) -> Tuple[str, List[Any]]:
+    
     filtros = ["1=1"]
     params: List[Any] = []
 
+    col_sucursal = "sucursal" if es_vista_resumen else "CNOMBREALMACEN"
+    
     if sucursal:
-        # Corrección: Ignorar espacios en blanco en la BD
-        filtros.append("LTRIM(RTRIM(CNOMBREALMACEN)) = ?")
+        filtros.append(f"LTRIM(RTRIM({col_sucursal})) = ?")
         params.append(sucursal.strip())
 
-    if producto:
+    if producto and not es_vista_resumen:
         filtros.append("(CCODIGOPRODUCTO LIKE ? OR CNOMBREPRODUCTO LIKE ?)")
         like = f"%{producto}%"
         params.extend([like, like])
 
-    # --- ESTRATEGIA DE FECHAS (NATIVA) ---
     usando_rango = False
 
     if fecha_desde:
@@ -44,13 +46,12 @@ def _build_filtros_where(
 
     if fecha_hasta:
         usando_rango = True
-        filtros.append("fecha < ?") # Menor estricto al día siguiente
+        filtros.append("fecha < ?")
         if isinstance(fecha_hasta, str):
             fecha_hasta = datetime.strptime(fecha_hasta, "%Y-%m-%d").date()
         fecha_fin_corte = fecha_hasta + timedelta(days=1)
         params.append(fecha_fin_corte)
 
-    # Solo aplicamos Mes/Año si no hay rango
     if not usando_rango:
         if mes and anio:
             start_date = date(int(anio), int(mes), 1)
@@ -62,7 +63,6 @@ def _build_filtros_where(
             params.append(start_date)
             filtros.append("fecha < ?")
             params.append(end_date)
-        
         elif anio:
             start_date = date(int(anio), 1, 1)
             end_date = date(int(anio) + 1, 1, 1)
@@ -70,7 +70,6 @@ def _build_filtros_where(
             params.append(start_date)
             filtros.append("fecha < ?")
             params.append(end_date)
-
         elif mes:
             filtros.append("MONTH(fecha) = ?")
             params.append(int(mes))
@@ -79,7 +78,7 @@ def _build_filtros_where(
     return where_sql, params
 
 
-# ----------------- Listado (PANTALLA) -----------------
+# ----------------- Listado (PANTALLA DETALLES) -----------------
 
 def listar_ventas_producto(
     page: int,
@@ -96,29 +95,21 @@ def listar_ventas_producto(
     if not ejecutar:
         return {"items": [], "total_items": 0, "page": page, "page_size": page_size}
 
-    logger.info(f"--- [TABLA] Iniciando consulta Page={page} ---")
-
     page = max(page, 1)
     page_size = max(1, min(page_size, 500))
     offset = (page - 1) * page_size
 
     where_sql, params = _build_filtros_where(
-        sucursal=sucursal,
-        producto=producto,
-        fecha_desde=fecha_desde,
-        fecha_hasta=fecha_hasta,
-        mes=mes,
-        anio=anio,
+        sucursal, producto, fecha_desde, fecha_hasta, mes, anio, es_vista_resumen=False
     )
 
     sql_count = f"SELECT COUNT(1) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql} OPTION (RECOMPILE);"
 
-    # Incluimos 'hora' en la posición correcta
     sql_rows = f"""
         SELECT
             fecha, Mes, hora, id_pro, CCODIGOPRODUCTO, CNOMBREPRODUCTO,
             cantidad, CNOMBREUNIDAD, precio, Importe, descuento,
-            impuesto, Total, CNOMBREALMACEN
+            impuesto, Total, CNOMBREALMACEN, Folio
         FROM zzVentasPorProducto WITH (NOLOCK)
         {where_sql}
         ORDER BY fecha DESC, hora DESC
@@ -138,13 +129,11 @@ def listar_ventas_producto(
         cursor.execute(sql_rows, params_rows)
         rows = cursor.fetchall()
         
-        logger.info(f"--- [TABLA] Éxito. {len(rows)} filas. ---")
-
         items: List[Dict[str, Any]] = []
         for r in rows:
             items.append({
                 "fecha": str(r[0]) if r[0] else "", 
-                "Mes": r[1],
+                "Mes": str(r[1]) if r[1] is not None else "",  # <--- CORRECCIÓN AQUÍ: Convertir a string
                 "hora": str(r[2]) if r[2] else "",
                 "id_pro": int(r[3]),
                 "CCODIGOPRODUCTO": r[4],
@@ -157,6 +146,7 @@ def listar_ventas_producto(
                 "impuesto": float(r[11]),
                 "Total": float(r[12]),
                 "CNOMBREALMACEN": r[13],
+                "Folio": str(r[14]) if r[14] else "" # Aseguramos Folio también
             })
 
         return {
@@ -174,50 +164,202 @@ def listar_ventas_producto(
         if conn: conn.close()
 
 
-# ----------------- KPIs -----------------
+# ----------------- KPIs MEJORADOS (INTELIGENTES) -----------------
 
 def calcular_kpis(filtros: "VentasProductoFiltros") -> Dict[str, Any]:
     conn = None
     try:
-        where_sql, params = _build_filtros_where(
-            filtros.sucursal, filtros.producto, filtros.fecha_desde, 
-            filtros.fecha_hasta, filtros.mes, filtros.anio
-        )
-
-        sql_totales = f"SELECT COUNT(*), ISNULL(SUM(Total), 0), ISNULL(SUM(cantidad), 0) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql}"
-        sql_distinct = f"SELECT COUNT(DISTINCT id_pro) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql}"
-        sql_top = f"SELECT TOP 1 CNOMBREALMACEN, SUM(Total) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql} GROUP BY CNOMBREALMACEN ORDER BY 2 DESC"
-
+        usar_vista_resumen = (filtros.producto is None or filtros.producto.strip() == "")
+        
         conn = get_connection()
         cur = conn.cursor()
-        
-        cur.execute(sql_totales, params)
-        row = cur.fetchone()
-        totales = (row[0], row[1], row[2]) if row else (0, 0, 0)
 
-        cur.execute(sql_distinct, params)
-        row_d = cur.fetchone()
-        distintos = int(row_d[0]) if row_d else 0
+        total_vendido = 0.0
+        unidades = 0.0
+        tickets_unicos = 0
+        ticket_promedio = 0.0
+        distintos_prods = 0
+        top_suc = (None, None)
+
+        if usar_vista_resumen:
+            # VISTA RÁPIDA
+            where_sql, params = _build_filtros_where(
+                filtros.sucursal, None, filtros.fecha_desde, 
+                filtros.fecha_hasta, filtros.mes, filtros.anio, 
+                es_vista_resumen=True
+            )
+            
+            sql_totales = f"""
+                SELECT COUNT(*), ISNULL(SUM(total_venta), 0)
+                FROM zzVentasResumen WITH (NOLOCK) 
+                {where_sql}
+            """
+            cur.execute(sql_totales, params)
+            row = cur.fetchone()
+            tickets_unicos = int(row[0]) if row else 0
+            total_vendido = float(row[1]) if row else 0.0
+
+            # Unidades (Pesado)
+            where_sql_pesado, params_pesado = _build_filtros_where(
+                filtros.sucursal, filtros.producto, filtros.fecha_desde, 
+                filtros.fecha_hasta, filtros.mes, filtros.anio, 
+                es_vista_resumen=False
+            )
+            sql_unidades = f"""
+                SELECT ISNULL(SUM(cantidad), 0), COUNT(DISTINCT id_pro)
+                FROM zzVentasPorProducto WITH (NOLOCK)
+                {where_sql_pesado}
+            """
+            cur.execute(sql_unidades, params_pesado)
+            row_u = cur.fetchone()
+            unidades = float(row_u[0]) if row_u else 0.0
+            distintos_prods = int(row_u[1]) if row_u else 0
+
+            # Top Sucursal
+            sql_top = f"""
+                SELECT TOP 1 sucursal, SUM(total_venta) 
+                FROM zzVentasResumen WITH (NOLOCK) 
+                {where_sql} 
+                GROUP BY sucursal 
+                ORDER BY 2 DESC
+            """
+            cur.execute(sql_top, params)
+            row_t = cur.fetchone()
+            top_suc = (row_t[0], float(row_t[1])) if row_t else (None, None)
+
+        else:
+            # VISTA LENTA
+            where_sql, params = _build_filtros_where(
+                filtros.sucursal, filtros.producto, filtros.fecha_desde, 
+                filtros.fecha_hasta, filtros.mes, filtros.anio, 
+                es_vista_resumen=False
+            )
+
+            sql_totales = f"""
+                SELECT COUNT(DISTINCT id_venta), ISNULL(SUM(Total), 0), ISNULL(SUM(cantidad), 0)
+                FROM zzVentasPorProducto WITH (NOLOCK) 
+                {where_sql}
+            """
+            cur.execute(sql_totales, params)
+            row = cur.fetchone()
+            tickets_unicos = int(row[0]) if row else 0
+            total_vendido = float(row[1]) if row else 0.0
+            unidades = float(row[2]) if row else 0.0
+
+            sql_distinct = f"SELECT COUNT(DISTINCT id_pro) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql}"
+            cur.execute(sql_distinct, params)
+            row_d = cur.fetchone()
+            distintos_prods = int(row_d[0]) if row_d else 0
+
+            sql_top = f"SELECT TOP 1 CNOMBREALMACEN, SUM(Total) FROM zzVentasPorProducto WITH (NOLOCK) {where_sql} GROUP BY CNOMBREALMACEN ORDER BY 2 DESC"
+            cur.execute(sql_top, params)
+            row_t = cur.fetchone()
+            top_suc = (row_t[0], float(row_t[1])) if row_t else (None, None)
+
+        if tickets_unicos > 0:
+            ticket_promedio = total_vendido / tickets_unicos
         
-        cur.execute(sql_top, params)
-        row_t = cur.fetchone()
-        top_suc = (row_t[0], float(row_t[1])) if row_t else (None, None)
-    
         return {
-            "total_vendido": float(totales[1]),
-            "unidades_vendidas": float(totales[2]),
-            "productos_distintos": distintos,
+            "total_vendido": total_vendido,
+            "unidades_vendidas": unidades,
+            "productos_distintos": distintos_prods,
+            "ticket_promedio": ticket_promedio,
             "sucursal_top": top_suc[0],
             "sucursal_top_total": top_suc[1],
         }
+
     except Exception as e:
         logger.error(f"KPI ERROR: {e}")
-        return {"total_vendido": 0, "unidades_vendidas": 0, "productos_distintos": 0}
+        return {"total_vendido": 0, "unidades_vendidas": 0, "productos_distintos": 0, "ticket_promedio": 0}
     finally:
         if conn: conn.close()
 
 
-# ----------------- CATÁLOGOS -----------------
+# ----------------- GRÁFICA: HORAS PICO -----------------
+
+def obtener_ventas_por_hora(filtros: "VentasProductoFiltros") -> List[Dict[str, Any]]:
+    conn = None
+    try:
+        usar_vista_resumen = (filtros.producto is None or filtros.producto.strip() == "")
+        resultados = []
+        conn = get_connection()
+        cur = conn.cursor()
+
+        if usar_vista_resumen:
+            where_sql, params = _build_filtros_where(
+                filtros.sucursal, None, filtros.fecha_desde, 
+                filtros.fecha_hasta, filtros.mes, filtros.anio, 
+                es_vista_resumen=True
+            )
+            sql = f"""
+                SELECT DATEPART(HOUR, hora) as HoraDelDia, SUM(total_venta) as TotalVendido, COUNT(*) as NumTickets
+                FROM zzVentasResumen WITH (NOLOCK)
+                {where_sql}
+                GROUP BY DATEPART(HOUR, hora)
+                ORDER BY HoraDelDia
+            """
+        else:
+            where_sql, params = _build_filtros_where(
+                filtros.sucursal, filtros.producto, filtros.fecha_desde, 
+                filtros.fecha_hasta, filtros.mes, filtros.anio, 
+                es_vista_resumen=False
+            )
+            sql = f"""
+                SELECT DATEPART(HOUR, hora) as HoraDelDia, SUM(Total) as TotalVendido, COUNT(DISTINCT id_venta) as NumTickets
+                FROM zzVentasPorProducto WITH (NOLOCK)
+                {where_sql}
+                GROUP BY DATEPART(HOUR, hora)
+                ORDER BY HoraDelDia
+            """
+
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        
+        for r in rows:
+            resultados.append({
+                "hora": int(r[0]) if r[0] is not None else 0,
+                "total_vendido": float(r[1]),
+                "transacciones": int(r[2])
+            })
+            
+        return resultados
+
+    except Exception as e:
+        logger.error(f"HORAS PICO ERROR: {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+
+# ----------------- TOP PRODUCTOS -----------------
+def top_productos(filtros: "VentasProductoFiltros") -> List[Dict[str, Any]]:
+    conn = None
+    try:
+        where_sql, params = _build_filtros_where(
+            filtros.sucursal, None, filtros.fecha_desde, 
+            filtros.fecha_hasta, filtros.mes, filtros.anio, 
+            es_vista_resumen=False
+        )
+        sql = f"""
+            SELECT TOP 10 CCODIGOPRODUCTO, CNOMBREPRODUCTO, SUM(Total) as TotalVendido, SUM(cantidad) as Unidades
+            FROM zzVentasPorProducto WITH (NOLOCK)
+            {where_sql}
+            GROUP BY CCODIGOPRODUCTO, CNOMBREPRODUCTO
+            ORDER BY TotalVendido DESC
+        """
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        return [{"codigo": r[0], "producto": r[1], "total_vendido": float(r[2]), "cantidad_vendida": float(r[3])} for r in rows]
+    except Exception as e:
+        logger.error(f"TOP PRODUCTOS ERROR: {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+
+# ----------------- CATÁLOGOS Y EXPORTACIÓN -----------------
 
 def obtener_sucursales() -> List[str]:
     conn = None
@@ -227,11 +369,10 @@ def obtener_sucursales() -> List[str]:
         cur = conn.cursor()
         cur.execute(sql)
         return [r[0] for r in cur.fetchall()]
-    except Exception as e:
+    except Exception:
         return []
     finally:
         if conn: conn.close()
-
 
 def obtener_productos(q: Optional[str] = None, top: int = 50) -> List[Dict[str, Any]]:
     conn = None
@@ -239,27 +380,20 @@ def obtener_productos(q: Optional[str] = None, top: int = 50) -> List[Dict[str, 
         top = max(1, min(int(top), 200))
         sql = f"SELECT TOP {top} CIDPRODUCTO, CCODIGOPRODUCTO, CNOMBREPRODUCTO FROM admProductos WITH (NOLOCK) WHERE CIDPRODUCTO <> 0"
         params = []
-
         if q:
             sql += " AND (CCODIGOPRODUCTO LIKE ? OR CNOMBREPRODUCTO LIKE ?)"
             like = f"%{q}%"
             params.extend([like, like])
-
         sql += " ORDER BY CCODIGOPRODUCTO"
-
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(sql, params)
         rows = cur.fetchall()
-
         return [{"id_pro": int(r[0]), "codigo": r[1], "nombre": r[2]} for r in rows]
-    except Exception as e:
+    except Exception:
         return []
     finally:
         if conn: conn.close()
-
-
-# ----------------- Otros Reportes -----------------
 
 def resumen_por_sucursal_mes_actual(mes: Optional[int] = None, anio: Optional[int] = None) -> List[Dict[str, Any]]:
     conn = None
@@ -267,12 +401,11 @@ def resumen_por_sucursal_mes_actual(mes: Optional[int] = None, anio: Optional[in
         now = datetime.now()
         mes = mes or now.month
         anio = anio or now.year
-        
         sql = """
-            SELECT ISNULL(CNOMBREALMACEN, 'SIN SUCURSAL'), ISNULL(SUM(Total), 0) 
-            FROM zzVentasPorProducto WITH (NOLOCK) 
+            SELECT ISNULL(sucursal, 'SIN SUCURSAL'), ISNULL(SUM(total_venta), 0) 
+            FROM zzVentasResumen WITH (NOLOCK) 
             WHERE YEAR(fecha) = ? AND MONTH(fecha) = ? 
-            GROUP BY CNOMBREALMACEN 
+            GROUP BY sucursal
             ORDER BY 2 DESC
         """
         conn = get_connection()
@@ -284,8 +417,6 @@ def resumen_por_sucursal_mes_actual(mes: Optional[int] = None, anio: Optional[in
         return []
     finally:
         if conn: conn.close()
-
-# ----------------- Exportación Excel (OPTIMIZADA) -----------------
 
 from app.reports.excel_generator import generar_excel_ventas_producto
 from io import BytesIO
@@ -300,38 +431,28 @@ def exportar_ventas_excel(
 ) -> BytesIO:
     conn = None
     try:
-        logger.info("--- [EXPORT] Iniciando exportación Excel ---")
-        
         where_sql, params = _build_filtros_where(
-            sucursal=sucursal, producto=producto, fecha_desde=fecha_desde,
-            fecha_hasta=fecha_hasta, mes=mes, anio=anio
+            sucursal, producto, fecha_desde, fecha_hasta, mes, anio, es_vista_resumen=False
         )
-
-        # CAMBIO: Agregamos 'hora' al SELECT para que el generador de Excel no falle
         sql = f"""
             SELECT
                 fecha, Mes, hora, id_pro, CCODIGOPRODUCTO, CNOMBREPRODUCTO,
                 cantidad, CNOMBREUNIDAD, precio, Importe, descuento,
-                impuesto, Total, CNOMBREALMACEN
+                impuesto, Total, CNOMBREALMACEN, Folio
             FROM zzVentasPorProducto WITH (NOLOCK)
             {where_sql}
             ORDER BY id_pro
         """
-
         conn = get_connection()
         cur = conn.cursor()
-        
-        logger.info("--- [EXPORT] Ejecutando Query... ---")
         cur.execute(sql, params)
         rows = cur.fetchall()
-        logger.info(f"--- [EXPORT] Query finalizado. {len(rows)} filas encontradas. Generando archivo... ---")
-
         items = []
         for r in rows:
             items.append({
                 "fecha": str(r[0]) if r[0] else "", 
-                "Mes": r[1],
-                "hora": str(r[2]) if r[2] else "",  # <--- ¡AQUÍ ESTABA EL FALTANTE!
+                "Mes": str(r[1]) if r[1] is not None else "",  # <--- CORRECCIÓN TAMBIÉN AQUÍ
+                "hora": str(r[2]) if r[2] else "",
                 "id_pro": int(r[3]),
                 "CCODIGOPRODUCTO": r[4],
                 "CNOMBREPRODUCTO": r[5],
@@ -343,25 +464,20 @@ def exportar_ventas_excel(
                 "impuesto": float(r[11]),
                 "Total": float(r[12]),
                 "CNOMBREALMACEN": r[13],
+                "Folio": str(r[14]) if r[14] else ""
             })
         
-        # Textos del encabezado
         sucursal_texto = sucursal if sucursal else "TODAS LAS SUCURSALES"
-        meses_nombres = ["", "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
-                        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
+        meses = ["", "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO", 
+                 "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"]
         
-        periodo_texto = ""
-        if mes and anio: periodo_texto = f"{meses_nombres[int(mes)]} {anio}"
-        elif mes: periodo_texto = f"{meses_nombres[int(mes)]}"
-        elif anio: periodo_texto = f"DEL AÑO {anio}"
-        elif fecha_desde and fecha_hasta: periodo_texto = f"DEL {fecha_desde} AL {fecha_hasta}"
-        else: periodo_texto = "HISTÓRICO GENERAL"
+        periodo = ""
+        if mes and anio: periodo = f"{meses[int(mes)]} {anio}"
+        elif mes: periodo = f"{meses[int(mes)]}"
+        elif anio: periodo = f"DEL AÑO {anio}"
+        elif fecha_desde and fecha_hasta: periodo = f"DEL {fecha_desde} AL {fecha_hasta}"
+        else: periodo = "HISTÓRICO GENERAL"
         
-        return generar_excel_ventas_producto(items, sucursal_texto, periodo_texto)
+        return generar_excel_ventas_producto(items, sucursal_texto, periodo)
     finally:
         if conn: conn.close()
-
-# Placeholders
-def ventas_por_sucursal(**kwargs): return []
-def top_productos(**kwargs): return []
-def timeline_ventas(**kwargs): return []

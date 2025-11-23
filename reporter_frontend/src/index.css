@@ -1,116 +1,104 @@
-:root {
-  /* --- PALETA DE COLORES --- */
-  --bg-app: #0f172a;
-  /* Fondo general (Slate 900 aprox) */
-  --bg-panel: #1e293b;
-  /* Fondo de tarjetas/filtros */
-  --bg-table: #020617;
-  /* Fondo de la tabla (más oscuro) */
-  --bg-table-header: #0b1120;
-  /* Encabezados de tabla */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-  --text-main: #e2e8f0;
-  /* Texto principal (casi blanco) */
-  --text-muted: #94a3b8;
-  /* Texto secundario (gris) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --border-color: rgba(148, 163, 184, 0.2);
-  /* Bordes sutiles */
+@layer base {
+  :root {
+    /* 
+     * 🎨 SISTEMA DE COLORES (TEMA CLARO)
+     * Modifique estos valores para cambiar la apariencia global.
+     */
 
-  --accent-primary: #3b82f6;
-  /* Azul botón */
-  --accent-success: #22c55e;
-  /* Verde éxito/excel */
-  --accent-danger: #ef4444;
-  /* Rojo error */
+    /* Fondos */
+    --bg-background: #f1f5f9; /* Fondo general de la página (Slate 100) */
+    --bg-surface: #ffffff;    /* Fondo de tarjetas y paneles (Blanco puro) */
+    --border-color: #cbd5e1;  /* Color de bordes (Slate 300) */
 
-  /* Fuente */
-  font-family: system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  color: var(--text-main);
-  background-color: var(--bg-app);
+    /* Color Principal (Marca) */
+    --color-primary: #059669;       /* Color principal (Emerald 600) */
+    --color-primary-hover: #047857; /* Color al pasar el mouse (Emerald 700) */
+
+    /* Textos */
+    --text-main: #0f172a;  /* Texto principal (Negro azulado) */
+    --text-muted: #64748b; /* Texto secundario/deshabilitado (Gris medio) */
+
+    /* Estados */
+    --color-success: #059669; /* Éxito (Verde) */
+    --color-danger: #dc2626;  /* Error/Peligro (Rojo) */
+  }
+
+  .dark {
+    /* 
+     * 🌙 TEMA OSCURO
+     * Valores anulados cuando se activa el modo oscuro.
+     */
+    --bg-background: #0f172a; /* Fondo oscuro (Slate 900) */
+    --bg-surface: #1e293b;    /* Superficie oscura (Slate 800) */
+    --border-color: #334155;  /* Bordes oscuros (Slate 700) */
+
+    --color-primary: #3b82f6;       /* Azul brillante en modo oscuro */
+    --color-primary-hover: #2563eb; /* Azul más oscuro al hover */
+
+    --text-main: #f1f5f9;  /* Texto claro (Slate 100) */
+    --text-muted: #94a3b8; /* Texto secundario claro (Slate 400) */
+
+    --color-success: #10b981; /* Verde brillante */
+    --color-danger: #ef4444;  /* Rojo brillante */
+  }
 }
 
 body {
-  margin: 0;
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-/* --- ESTILOS GLOBALES DE UI --- */
-
-/* Inputs y Selects (Estilo unificado) */
-.form-control {
-  padding: 0.6rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--border-color);
-  background-color: rgba(2, 6, 23, 0.5);
+  background-color: var(--bg-background);
   color: var(--text-main);
-  font-size: 0.9rem;
-  width: 100%;
-  box-sizing: border-box;
+  font-family: 'Inter', system-ui, sans-serif;
+  @apply antialiased transition-colors duration-300;
 }
 
-.form-control:focus {
-  outline: 2px solid var(--accent-primary);
-  border-color: transparent;
+/* --- CLASES DE COMPONENTES (Botones Reales) --- */
+@layer components {
+  .form-control {
+    @apply w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-main shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none shadow-sm;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-hover border border-transparent;
+  }
+
+  .btn-secondary {
+    @apply bg-surface text-text-main border border-border hover:bg-gray-50 dark:hover:bg-gray-800;
+  }
+
+  /* ESTA ES LA QUE FALTABA */
+  .btn-success {
+    @apply bg-success text-white hover:bg-emerald-700 border border-transparent;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:bg-red-700;
+  }
 }
 
-/* Botones Generales */
-.btn {
-  border: none;
-  border-radius: 0.5rem;
-  padding: 0.6rem 1.2rem;
-  font-size: 0.9rem;
-  font-weight: 600;
-  cursor: pointer;
-  color: white;
-  transition: opacity 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn:hover {
-  opacity: 0.9;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background-color: var(--accent-primary);
-}
-
-.btn-success {
-  background-color: var(--accent-success);
-}
-
-.btn-secondary {
-  background-color: #64748b;
-}
-
-.btn-danger {
-  background-color: var(--accent-danger);
-}
-
-/* Scrollbar bonita */
+/* Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--bg-app);
+  background-color: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #475569;
+  background-color: var(--border-color);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
+  background-color: var(--text-muted);
 }

@@ -2,7 +2,7 @@
 
 export interface VentasProductoRow {
     fecha: string;
-    hora: string; // <--- AGREGAR ESTO
+    hora: string;
     Mes: string;
     id_pro: number;
     CCODIGOPRODUCTO: string;
@@ -15,9 +15,9 @@ export interface VentasProductoRow {
     impuesto: number;
     Total: number;
     CNOMBREALMACEN: string | null;
+    Folio?: string; // Agregamos el opcional por si acaso
 }
 
-// ... (el resto del archivo sigue igual)
 export interface VentasProductoPage {
     items: VentasProductoRow[];
     total_items: number;
@@ -29,6 +29,9 @@ export interface VentasProductoKpis {
     total_vendido: number;
     unidades_vendidas: number;
     productos_distintos: number;
+    // --- AGREGAR ESTA LÍNEA ---
+    ticket_promedio: number;
+    // --------------------------
     sucursal_top: string | null;
     sucursal_top_total: number | null;
 }
@@ -45,9 +48,11 @@ export interface VentasPorSucursal {
     total_vendido: number;
 }
 
-export interface PuntoTimeline {
-    fecha: string;
+// Si usaste 'any' en el dashboard no necesitas este, pero es buena práctica tenerlo
+export interface VentaPorHoraItem {
+    hora: number;
     total_vendido: number;
+    transacciones: number;
 }
 
 export interface ProductoOpcion {

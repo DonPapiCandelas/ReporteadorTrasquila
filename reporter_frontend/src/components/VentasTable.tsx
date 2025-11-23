@@ -1,13 +1,25 @@
 import React from "react";
 import type { VentasProductoRow } from "../types/reportes";
-import "./VentasTable.css"; // <--- Importamos el CSS
+import "./VentasTable.css"; // Estilos específicos para la tabla
 
 interface Props {
     rows: VentasProductoRow[];
 }
 
+/**
+ * Componente de Tabla para mostrar el detalle de ventas.
+ * 
+ * @param {Props} props - Propiedades del componente.
+ * @param {VentasProductoRow[]} props.rows - Lista de filas de datos a mostrar.
+ * 
+ * Este componente renderiza una tabla HTML estándar con estilos personalizados.
+ * Las columnas coinciden con la estructura del reporte Excel.
+ */
 export const VentasTable: React.FC<Props> = ({ rows }) => {
 
+    /**
+     * Formatea una fecha ISO a formato DD/MM/YYYY.
+     */
     const formatearFecha = (fechaISO: string | null | undefined) => {
         if (!fechaISO) return "—";
         const soloFecha = String(fechaISO).substring(0, 10);
