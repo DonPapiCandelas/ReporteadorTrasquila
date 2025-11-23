@@ -1,0 +1,56 @@
+.app-layout {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    /* Fondo degradado profesional */
+    background: radial-gradient(circle at 50% 0%, #1e293b 0%, #020617 70%);
+    color: var(--text-main);
+}
+
+.app-header {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: rgba(15, 23, 42, 0.85);
+    /* Semi-transparente */
+    backdrop-filter: blur(12px);
+    /* Efecto vidrio */
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+.header-brand {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    background: rgba(255, 255, 255, 0.05);
+    padding: 0.2rem 0.6rem;
+    border-radius: 1rem;
+}
+
+.app-main {
+    flex: 1;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    max-width: 1600px;
+    /* Un poco más ancho para pantallas grandes */
+    margin: 0 auto;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.content-wrapper {
+    width: 100%;
+    box-sizing: border-box;
+}

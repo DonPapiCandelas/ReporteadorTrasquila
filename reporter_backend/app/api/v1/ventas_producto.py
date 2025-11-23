@@ -7,6 +7,7 @@ from fastapi import APIRouter, Query
 from app.schemas.reports import VentasProductoPage, ProductoOpcion
 from app.reports import ventas_producto_service as service
 
+import traceback # <--- AGREGAR ESTE IMPORT AL INICIO DEL ARCHIVO
 router = APIRouter(tags=["ventas-producto"])
 
 
@@ -43,7 +44,24 @@ def listar_ventas_producto(
 
 @router.get("/sucursales", response_model=List[str])
 def listar_sucursales():
-    return service.obtener_sucursales()
+    print("\n--- DEBUG: INICIANDO PETICIÓN SUCURSALES ---")
+    try:
+        # Intentamos obtener los datos
+        resultado = service.obtener_sucursales()
+        print(f"--- DEBUG: ÉXITO. Se encontraron {len(resultado)} sucursales.")
+        return resultado
+    except Exception as e:
+        # Si falla, imprimimos EL ERROR REAL en la consola
+        print("\n" + "="*50)
+        print("!!! ERROR FATAL EN API SUCURSALES !!!")
+        print(f"Tipo de error: {type(e).__name__}")
+        print(f"Mensaje: {str(e)}")
+        print("-" * 20)
+        print("TRACEBACK COMPLETO:")
+        traceback.print_exc() # Esto imprime la línea exacta donde tronó
+        print("="*50 + "\n")
+        # Relanzamos el error para que FastAPI sepa que falló
+        raise e
 
 
 @router.get("/productos", response_model=List[ProductoOpcion])

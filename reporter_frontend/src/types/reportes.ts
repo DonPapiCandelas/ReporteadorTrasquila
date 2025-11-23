@@ -1,7 +1,8 @@
 // src/types/reportes.ts
 
 export interface VentasProductoRow {
-    fecha: string; // ISO string
+    fecha: string;
+    hora: string; // <--- AGREGAR ESTO
     Mes: string;
     id_pro: number;
     CCODIGOPRODUCTO: string;
@@ -16,6 +17,7 @@ export interface VentasProductoRow {
     CNOMBREALMACEN: string | null;
 }
 
+// ... (el resto del archivo sigue igual)
 export interface VentasProductoPage {
     items: VentasProductoRow[];
     total_items: number;

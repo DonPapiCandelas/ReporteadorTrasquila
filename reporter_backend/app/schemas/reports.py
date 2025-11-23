@@ -1,9 +1,12 @@
 from typing import List, Optional
 from pydantic import BaseModel
 
-
 class VentasProductoRow(BaseModel):
-
+    # --- AGREGAMOS ESTOS DOS CAMPOS ---
+    fecha: Optional[str] = None
+    hora: Optional[str] = None
+    # ----------------------------------
+    
     Mes: str
     id_pro: int
     CCODIGOPRODUCTO: str
@@ -28,7 +31,6 @@ class VentasProductoPage(BaseModel):
     page_size: int
     items: List[VentasProductoRow]
 
-
 class VentasProductoFiltros(BaseModel):
     sucursal: Optional[str] = None
     mes: Optional[int] = None
@@ -37,11 +39,9 @@ class VentasProductoFiltros(BaseModel):
     fecha_hasta: Optional[str] = None
     producto: Optional[str] = None
 
-
 class VentasPorSucursalItem(BaseModel):
     sucursal: Optional[str]
     total_vendido: float
-
 
 class VentasProductoKpis(BaseModel):
     total_vendido: float

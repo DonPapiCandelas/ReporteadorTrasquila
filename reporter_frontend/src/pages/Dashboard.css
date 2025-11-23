@@ -1,0 +1,151 @@
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dashboard-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--text-main);
+}
+
+.panel-section {
+    background-color: var(--bg-panel);
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.panel-title {
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+    font-weight: 500;
+    color: var(--text-main);
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+/* Grid de KPIs y Filtros */
+.grid-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.grid-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+}
+
+/* Campos individuales */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+/* Barra de acciones */
+.action-bar {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.export-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    justify-content: flex-end;
+}
+
+/* Paginador */
+.table-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.paginator {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+.btn-pager {
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.3rem;
+    border: 1px solid var(--border-color);
+    background: transparent;
+    color: var(--text-main);
+    cursor: pointer;
+}
+
+.btn-pager:disabled {
+    opacity: 0.3;
+}
+
+.btn-pager:hover:not(:disabled) {
+    background-color: var(--bg-app);
+}
+
+/* Mensajes */
+.msg-loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-muted);
+}
+
+.msg-error {
+    padding: 1rem;
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--accent-danger);
+}
+
+/* ... (todo lo anterior) ... */
+
+/* --- CLASES DE APOYO (NUEVAS) --- */
+
+/* Para la sección de KPIs superiores */
+.kpi-resumen {
+    margin-bottom: 1.5rem;
+}
+
+/* Para la sección de la tabla (versión compacta) */
+.panel-section.compact {
+    padding: 1rem;
+}
+
+/* Título de la tabla */
+.table-title {
+    margin: 0;
+    font-size: 1.17em;
+    /* Tamaño estándar de h3 */
+    font-weight: bold;
+}
+
+/* Contador de páginas */
+.page-info {
+    font-size: 0.85rem;
+    opacity: 0.7;
+    color: var(--text-muted);
+}
