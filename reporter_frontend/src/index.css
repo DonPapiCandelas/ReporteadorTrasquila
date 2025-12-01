@@ -12,21 +12,31 @@
      */
 
     /* Fondos */
-    --bg-background: #f1f5f9; /* Fondo general de la página (Slate 100) */
-    --bg-surface: #ffffff;    /* Fondo de tarjetas y paneles (Blanco puro) */
-    --border-color: #cbd5e1;  /* Color de bordes (Slate 300) */
-
+    --bg-background: #f1f5f9;
+    /* Fondo general de la página (Slate 100) */
+    --bg-surface: #ffffff;
+    /* Fondo de tarjetas y paneles (Blanco puro) */
+    --border-color: #cbd5e1;
+    /* Color de bordes (Slate 300) */
+    --bg-table-header: #f8fafc;
+    /* Un gris muy clarito (Slate 50) para diferenciarlo */
     /* Color Principal (Marca) */
-    --color-primary: #059669;       /* Color principal (Emerald 600) */
-    --color-primary-hover: #047857; /* Color al pasar el mouse (Emerald 700) */
+    --color-primary: #059669;
+    /* Color principal (Emerald 600) */
+    --color-primary-hover: #047857;
+    /* Color al pasar el mouse (Emerald 700) */
 
     /* Textos */
-    --text-main: #0f172a;  /* Texto principal (Negro azulado) */
-    --text-muted: #64748b; /* Texto secundario/deshabilitado (Gris medio) */
+    --text-main: #0f172a;
+    /* Texto principal (Negro azulado) */
+    --text-muted: #64748b;
+    /* Texto secundario/deshabilitado (Gris medio) */
 
     /* Estados */
-    --color-success: #059669; /* Éxito (Verde) */
-    --color-danger: #dc2626;  /* Error/Peligro (Rojo) */
+    --color-success: #059669;
+    /* Éxito (Verde) */
+    --color-danger: #dc2626;
+    /* Error/Peligro (Rojo) */
   }
 
   .dark {
@@ -34,18 +44,28 @@
      * 🌙 TEMA OSCURO
      * Valores anulados cuando se activa el modo oscuro.
      */
-    --bg-background: #0f172a; /* Fondo oscuro (Slate 900) */
-    --bg-surface: #1e293b;    /* Superficie oscura (Slate 800) */
-    --border-color: #334155;  /* Bordes oscuros (Slate 700) */
+    --bg-background: #0f172a;
+    /* Fondo oscuro (Slate 900) */
+    --bg-surface: #1e293b;
+    /* Superficie oscura (Slate 800) */
+    --border-color: #334155;
+    /* Bordes oscuros (Slate 700) */
+    --bg-table-header: #1e293b;
+    /* Mismo color que la superficie */
+    --color-primary: #3b82f6;
+    /* Azul brillante en modo oscuro */
+    --color-primary-hover: #2563eb;
+    /* Azul más oscuro al hover */
 
-    --color-primary: #3b82f6;       /* Azul brillante en modo oscuro */
-    --color-primary-hover: #2563eb; /* Azul más oscuro al hover */
+    --text-main: #f1f5f9;
+    /* Texto claro (Slate 100) */
+    --text-muted: #94a3b8;
+    /* Texto secundario claro (Slate 400) */
 
-    --text-main: #f1f5f9;  /* Texto claro (Slate 100) */
-    --text-muted: #94a3b8; /* Texto secundario claro (Slate 400) */
-
-    --color-success: #10b981; /* Verde brillante */
-    --color-danger: #ef4444;  /* Rojo brillante */
+    --color-success: #10b981;
+    /* Verde brillante */
+    --color-danger: #ef4444;
+    /* Rojo brillante */
   }
 }
 

@@ -18,6 +18,7 @@ import { AdminUsers } from "./pages/AdminUsers";
  * @returns {JSX.Element} Jerarquía de rutas de la aplicación
  */
 const App: React.FC = () => {
+  console.log("App.tsx: Rendering App component");
   return (
     <BrowserRouter>
       <Routes>

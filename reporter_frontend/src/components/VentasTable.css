@@ -1,8 +1,11 @@
+/* src/components/VentasTable.css */
+
 .table-container {
     margin-top: 0;
     border-radius: 0.5rem;
     overflow-x: auto;
     background-color: var(--bg-table);
+    /* Asegúrate de que esta variable exista o usa --bg-surface */
     border: 1px solid var(--border-color);
     width: 100%;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
@@ -10,31 +13,45 @@
 
 .ventas-table {
     width: 100%;
-    min-width: 1400px;
-    /* Para que no se rompan las columnas */
+    /* CORRECCIÓN 1: Permitir que se ajuste al 100% en lugar de forzar 1400px */
+    min-width: 100%;
     border-collapse: collapse;
-    font-size: 0.875rem;
+    /* CORRECCIÓN 2: Letra un poco más pequeña para ganar espacio */
+    font-size: 0.80rem;
 }
 
 .ventas-table thead {
+    /* CORRECCIÓN 3: Fondo sólido para todo el bloque del header */
     background-color: var(--bg-table-header);
 }
 
 .ventas-table th {
-    padding: 0.75rem 1rem;
+    /* CORRECCIÓN 4: Padding reducido (antes 0.75rem 1rem) */
+    padding: 0.5rem 0.5rem;
     text-align: left;
+
+    /* Sticky Header */
     position: sticky;
     top: 0;
-    z-index: 10;
+    z-index: 20;
+    /* Capa superior */
+
     font-weight: 600;
     color: var(--text-main);
+
+    /* CORRECCIÓN 5: Fondo explícito para tapar las filas al hacer scroll */
     background-color: var(--bg-table-header);
-    /* Necesario para sticky */
+
     white-space: nowrap;
+
+    /* Estética del borde inferior */
+    border-bottom: 2px solid var(--border-color);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .ventas-table td {
-    padding: 0.625rem 1rem;
+    /* CORRECCIÓN 6: Padding reducido en celdas también */
+    padding: 0.35rem 0.5rem;
     white-space: nowrap;
     color: var(--text-muted);
     border-top: 1px solid var(--border-color);
@@ -51,5 +68,5 @@
 .text-total {
     font-weight: 700;
     color: #4ade80;
-    /* Un verde brillante para dinero */
+    /* Verde brillante para totales */
 }
