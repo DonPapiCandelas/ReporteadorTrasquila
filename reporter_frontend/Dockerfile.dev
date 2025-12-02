@@ -1,0 +1,20 @@
+# Usamos una imagen ligera de Node
+FROM node:18-alpine
+
+# Creamos la carpeta de trabajo dentro del contenedor
+WORKDIR /app
+
+# Copiamos solo los archivos de requisitos primero (para aprovechar la caché)
+COPY package.json .
+
+# Instalamos las dependencias
+RUN npm install
+
+# Copiamos el resto del código
+COPY . .
+
+# Exponemos el puerto
+EXPOSE 5173
+
+# El comando para arrancar (con --host para que se vea desde fuera)
+CMD ["npm", "run", "dev", "--", "--host"]
