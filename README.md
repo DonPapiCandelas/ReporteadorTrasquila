@@ -1,132 +1,97 @@
-# ReportesWeb (TrasquilaBI)
+# ReportesWeb (TrasquilaBI) - Guía de Despliegue
 
-Sistema de reportes web integrado con CONTPAQi Comercial, desarrollado con una arquitectura moderna separando el Backend (FastAPI) y el Frontend (React/Vite).
+Sistema de reportes web integrado con CONTPAQi Comercial, modernizado para ejecutarse en contenedores Docker.
 
-## 📂 Estructura del Proyecto
+## 📦 Contenido del Paquete
 
-El proyecto se divide en dos componentes principales:
-
-- **`reporter_backend/`**: API REST desarrollada en Python con FastAPI. Se encarga de la conexión a la base de datos SQL Server, la autenticación de usuarios y la generación de reportes en Excel.
-- **`reporter_frontend/`**: Interfaz de usuario desarrollada en React con Vite y Tailwind CSS. Proporciona el Dashboard, las tablas de datos y la visualización de gráficos.
-
-## 🛠 Requisitos Previos
-
-Antes de comenzar, asegúrate de tener instalado:
-
-- **Python 3.10** o superior.
-- **Node.js 18** o superior (incluye npm).
-- **SQL Server**: Instancia de CONTPAQi Comercial o compatible.
-- **ODBC Driver 17 (o 18) for SQL Server**: Necesario para que Python se conecte a la base de datos.
+Este proyecto incluye:
+- **Backend (API)**: Python/FastAPI. Se conecta a SQL Server para leer datos y a SQLite para gestionar usuarios.
+- **Frontend (Web)**: React/Vite. Interfaz gráfica moderna y rápida.
+- **Base de Datos de Usuarios**: `reporter_backend/auth.db` (SQLite). Contiene los usuarios y contraseñas; viaja con el proyecto.
 
 ---
 
-## 🚀 Instalación y Configuración
+## 🛠 Requisitos del Cliente
 
-### 1. Backend (Python/FastAPI)
-
-1.  Navega a la carpeta del backend:
-    ```bash
-    cd reporter_backend
-    ```
-
-2.  Crea un entorno virtual para aislar las dependencias:
-    ```bash
-    python -m venv venv
-    ```
-
-3.  Activa el entorno virtual:
-    - **Windows**: `venv\Scripts\activate`
-    - **Linux/Mac**: `source venv/bin/activate`
-
-4.  Instala las librerías necesarias:
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-5.  **Configuración (.env)**:
-    Crea un archivo `.env` en la carpeta `reporter_backend/app/` (o en la raíz del backend) basándote en el siguiente ejemplo:
-
-    ```env
-    # Conexión a Base de Datos de Reportes (CONTPAQi)
-    SQLSERVER_REPORTING_DSN=mssql+pyodbc://sa:TuPassword@LOCALHOST\COMPAC/adCOM_TuEmpresa?driver=ODBC+Driver+17+for+SQL+Server
-
-    # Conexión a Base de Datos de Usuarios (Auth)
-    SQLSERVER_AUTH_DSN=mssql+pyodbc://sa:TuPassword@LOCALHOST\COMPAC/ReportesWeb_Auth?driver=ODBC+Driver+17+for+SQL+Server
-
-    # Seguridad
-    SECRET_KEY=TuClaveSecretaSuperSeguraGeneradaConOpenssl
-    ALGORITHM=HS256
-    ACCESS_TOKEN_EXPIRE_MINUTES=30
-    ```
-
-### 2. Frontend (React/Vite)
-
-1.  Navega a la carpeta del frontend:
-    ```bash
-    cd reporter_frontend
-    ```
-
-2.  Instala las dependencias de Node.js:
-    ```bash
-    npm install
-    ```
-
-3.  (Opcional) Si necesitas cambiar la URL del API, edita el archivo `.env` del frontend o la configuración de Axios en `src/api/axios.ts`.
+Para instalar esto en un nuevo cliente, solo necesitas:
+1.  **Docker Desktop** instalado y corriendo.
+2.  **Acceso a SQL Server**: Credenciales (usuario `sa` o similar) y saber el puerto/instancia.
 
 ---
 
-## ▶️ Ejecución
+## 🚀 Guía de Instalación (Paso a Paso)
 
-### Iniciar Backend
+### 1. Copiar la Carpeta
+Copia toda la carpeta `ReporteadorTrasquila` a la computadora del cliente.
 
-Desde la carpeta `reporter_backend` (con el entorno virtual activado):
+### 2. Configurar Conexión (.env)
+Abre el archivo `reporter_backend/.env` con un editor de texto (Bloc de notas).
+Modifica **SOLO** las siguientes líneas con los datos del cliente:
+
+```env
+# 1. IP o Nombre del Servidor SQL (usualmente host.docker.internal si está en la misma PC)
+DB_SERVER=host.docker.internal
+
+# 2. Nombre de la Base de Datos de CONTPAQi Comercial
+DB_NAME=adCOMERCIALIZADORATRASQUILA
+
+# 3. Usuario de SQL Server
+DB_USER=sa
+
+# 4. Contraseña de SQL Server
+DB_PASSWORD=TuPasswordDeSQL
+
+# 5. Cadena de Conexión (IMPORTANTE: Actualizar PUERTO y PASSWORD aquí también)
+# Formato: SERVER=host.docker.internal,PUERTO;DATABASE=NOMBRE_DB;UID=USUARIO;PWD=PASSWORD
+SQLSERVER_REPORTING_DSN=DRIVER={ODBC Driver 17 for SQL Server};SERVER=host.docker.internal,63206;DATABASE=adCOMERCIALIZADORATRASQUILA;UID=sa;PWD=TuPasswordDeSQL
+```
+
+> **NOTA IMPORTANTE SOBRE EL PUERTO:**
+> Si el SQL Server del cliente usa una instancia dinámica (ej. `COMPAC`), debes averiguar el puerto TCP dinámico (ej. `63206`) y ponerlo en la cadena de conexión después de la coma.
+
+### 3. Iniciar el Sistema
+Abre una terminal (PowerShell o CMD) en la carpeta del proyecto y ejecuta:
 
 ```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+docker-compose up -d
 ```
-El API estará disponible en: `http://localhost:8000`
-Documentación interactiva (Swagger): `http://localhost:8000/docs`
 
-### Iniciar Frontend
+Esto descargará e iniciará todo automáticamente.
 
-Desde la carpeta `reporter_frontend`:
-
-```bash
-npm run dev
-```
-La aplicación web estará disponible en: `http://localhost:5173` (o el puerto que indique la consola).
+### 4. Verificar
+Abre el navegador y entra a:
+**http://localhost:5173**
 
 ---
 
-## 🎨 Personalización
+## 👤 Gestión de Usuarios
 
-### Cambiar Colores (Frontend)
-Para modificar la paleta de colores de la aplicación web (modo claro y oscuro), edita el archivo:
-`reporter_frontend/src/index.css`
+Los usuarios **NO** se guardan en SQL Server. Se guardan en el archivo `reporter_backend/auth.db`.
+Este archivo ya incluye tus usuarios actuales. Al copiar la carpeta al cliente, **los usuarios se van contigo**.
 
-Busca la sección `:root` para el tema claro y `.dark` para el tema oscuro. Las variables principales son:
-- `--color-primary`: Color principal de la marca.
-- `--bg-background`: Color de fondo general.
-
-### Cambiar Logo (Reportes Excel)
-Para cambiar el logo que aparece en los archivos Excel generados:
-1.  Reemplaza el archivo de imagen en `reporter_backend/app/reports/logo.png` (o la ruta configurada).
-2.  Si deseas ajustar el tamaño o posición, edita `reporter_backend/app/reports/excel_generator.py`.
-
-### Personalizar Columnas de Excel
-La lógica de generación de Excel se encuentra en:
-`reporter_backend/app/reports/excel_generator.py`
-
-Dentro de este archivo, busca las funciones de generación (ej. `generar_excel_ventas_producto`) para modificar:
-- Encabezados de columnas.
-- Ancho de celdas.
-- Colores de fondo y fuentes.
+**Credenciales por defecto (si no las has cambiado):**
+- **Usuario:** `admin`
+- **Contraseña:** `password123`
 
 ---
 
-## 🆘 Soporte
+## 🔍 Dependencias de Base de Datos (Vistas)
 
-Si encuentras problemas de conexión a la base de datos, verifica:
-1.  Que el servicio de SQL Server esté corriendo.
-2.  Que las credenciales en el archivo `.env` sean correctas.
-3.  Que el firewall permita la conexión al puerto de SQL Server (usualmente 1433).
+El sistema asume que la base de datos de CONTPAQi Comercial tiene las siguientes Vistas creadas:
+
+1.  **`zzVentasResumen`**: Para KPIs y totales rápidos.
+2.  **`zzVentasPorProducto`**: Para detalles y Top Productos.
+3.  **`zz_SucursalesReporte`**: Catálogo de sucursales.
+
+Si la base de datos del cliente es nueva, asegúrate de ejecutar el script SQL de creación de vistas antes de usar el sistema.
+
+---
+
+## ❓ Solución de Problemas Comunes
+
+**Error: "Login timeout expired"**
+- Verifica que el puerto en `SQLSERVER_REPORTING_DSN` sea el correcto.
+- Asegúrate de que el firewall de Windows permita conexiones al puerto de SQL Server.
+
+**Error: "Invalid object name 'zzVentasResumen'"**
+- Faltan las vistas en la base de datos. Ejecuta el script de vistas en SQL Server Management Studio.

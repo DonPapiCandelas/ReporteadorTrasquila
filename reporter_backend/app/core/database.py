@@ -12,11 +12,19 @@ engine_reporting = create_engine(
 
 # --- 2. MOTOR DE AUTH (Usuarios) ---
 # Se utiliza para la gestión de usuarios y sesiones.
-url_auth = URL.create("mssql+pyodbc", query={"odbc_connect": settings.SQLSERVER_AUTH_DSN})
-engine_auth = create_engine(
-    url_auth,
-    pool_size=5, max_overflow=10, pool_timeout=30, pool_recycle=1800, pool_pre_ping=True
-)
+if settings.AUTH_DATABASE_URL.startswith("sqlite"):
+    # Configuración para SQLite
+    engine_auth = create_engine(
+        settings.AUTH_DATABASE_URL,
+        connect_args={"check_same_thread": False} # Necesario para SQLite en FastAPI
+    )
+else:
+    # Configuración para SQL Server (Legacy)
+    url_auth = URL.create("mssql+pyodbc", query={"odbc_connect": settings.SQLSERVER_AUTH_DSN})
+    engine_auth = create_engine(
+        url_auth,
+        pool_size=5, max_overflow=10, pool_timeout=30, pool_recycle=1800, pool_pre_ping=True
+    )
 
 print("--- MOTORES SQL INICIALIZADOS: REPORTING + AUTH ---")
 

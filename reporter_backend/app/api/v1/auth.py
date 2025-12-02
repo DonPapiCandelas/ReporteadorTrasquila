@@ -95,7 +95,8 @@ def login(user_data: UserLogin):
             raise HTTPException(status_code=403, detail="Acceso denegado. Contacta al administrador.")
 
         # 4. Registrar último login
-        cursor.execute("UPDATE admUsuariosWeb SET ultimo_login = GETDATE() WHERE id = ?", (user_db[0],))
+        # 4. Registrar último login
+        cursor.execute("UPDATE admUsuariosWeb SET ultimo_login = ? WHERE id = ?", (datetime.now(), user_db[0]))
         conn.commit()
 
         # 5. Generar Token

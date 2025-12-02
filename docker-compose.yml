@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  # Base de datos Postgres (si tu sistema la usa para algo interno)
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: usuario
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: reportes_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # Tu Backend Python
+  api:
+    build: ./reporter_backend
+    container_name: reporteador_api
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./reporter_backend:/app
+    depends_on:
+      - db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    env_file:
+      - ./reporter_backend/.env
+
+  # Tu Frontend React (Asegúrate de que esta línea esté alineada con 'api' y 'db')
+  web:
+    build: ./reporter_frontend
+    container_name: reporteador_web
+    ports:
+      - "5173:5173" # <--- CAMBIO IMPORTANTE: Mapeamos el puerto de Vite
+    volumes:
+      - ./reporter_frontend:/app
+      - /app/node_modules
+    stdin_open: true
+    tty: true
+
+volumes:
+  postgres_data:

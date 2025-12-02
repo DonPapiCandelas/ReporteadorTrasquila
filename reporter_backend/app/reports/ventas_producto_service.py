@@ -109,7 +109,7 @@ def listar_ventas_producto(
         SELECT
             fecha, Mes, hora, id_pro, CCODIGOPRODUCTO, CNOMBREPRODUCTO,
             cantidad, CNOMBREUNIDAD, precio, Importe, descuento,
-            impuesto, Total, CNOMBREALMACEN, Folio
+            impuesto, Total, CNOMBREALMACEN
         FROM zzVentasPorProducto WITH (NOLOCK)
         {where_sql}
         ORDER BY fecha DESC, hora DESC
@@ -133,7 +133,7 @@ def listar_ventas_producto(
         for r in rows:
             items.append({
                 "fecha": str(r[0]) if r[0] else "", 
-                "Mes": str(r[1]) if r[1] is not None else "",  # <--- CORRECCIÓN AQUÍ: Convertir a string
+                "Mes": str(r[1]) if r[1] is not None else "",
                 "hora": str(r[2]) if r[2] else "",
                 "id_pro": int(r[3]),
                 "CCODIGOPRODUCTO": r[4],
@@ -146,7 +146,7 @@ def listar_ventas_producto(
                 "impuesto": float(r[11]),
                 "Total": float(r[12]),
                 "CNOMBREALMACEN": r[13],
-                "Folio": str(r[14]) if r[14] else "" # Aseguramos Folio también
+                "Folio": "" 
             })
 
         return {
@@ -438,7 +438,7 @@ def exportar_ventas_excel(
             SELECT
                 fecha, Mes, hora, id_pro, CCODIGOPRODUCTO, CNOMBREPRODUCTO,
                 cantidad, CNOMBREUNIDAD, precio, Importe, descuento,
-                impuesto, Total, CNOMBREALMACEN, Folio
+                impuesto, Total, CNOMBREALMACEN
             FROM zzVentasPorProducto WITH (NOLOCK)
             {where_sql}
             ORDER BY id_pro
@@ -451,7 +451,7 @@ def exportar_ventas_excel(
         for r in rows:
             items.append({
                 "fecha": str(r[0]) if r[0] else "", 
-                "Mes": str(r[1]) if r[1] is not None else "",  # <--- CORRECCIÓN TAMBIÉN AQUÍ
+                "Mes": str(r[1]) if r[1] is not None else "",
                 "hora": str(r[2]) if r[2] else "",
                 "id_pro": int(r[3]),
                 "CCODIGOPRODUCTO": r[4],
@@ -464,7 +464,7 @@ def exportar_ventas_excel(
                 "impuesto": float(r[11]),
                 "Total": float(r[12]),
                 "CNOMBREALMACEN": r[13],
-                "Folio": str(r[14]) if r[14] else ""
+                "Folio": ""
             })
         
         sucursal_texto = sucursal if sucursal else "TODAS LAS SUCURSALES"

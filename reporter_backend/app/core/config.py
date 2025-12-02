@@ -19,6 +19,7 @@ class Settings(BaseSettings):
     # SQLSERVER_REPORTING_DSN: Cadena de conexión para la BD de CONTPAQi (Datos de ventas)
     # SQLSERVER_AUTH_DSN: Cadena de conexión para la BD de Usuarios (Login, permisos)
     SQLSERVER_REPORTING_DSN: str
-    SQLSERVER_AUTH_DSN: str
+    SQLSERVER_AUTH_DSN: str | None = None
+    AUTH_DATABASE_URL: str = "sqlite:///./auth.db"
 
 settings = Settings()
