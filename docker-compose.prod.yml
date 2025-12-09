@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  # Base de datos del Sistema (Usuarios, configuración del reporteador)
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      # IMPORTANTE: Esto guarda los datos en una carpeta visible en Windows
+      # Así, si borras el contenedor, los usuarios del cliente NO se borran.
+      - ./datos_del_sistema:/var/lib/postgresql/data
+    networks:
+      - red_trasquila
+
+  # Tu Backend (Python)
+  api:
+    build: ./reporter_backend
+    restart: always
+    environment:
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@db:5432/${DB_NAME}
+      # Aquí van las variables para conectar con CONTPAQi del cliente
+      CONTPAQI_SERVER: ${CONTPAQI_SERVER}
+      CONTPAQI_DB: ${CONTPAQI_DB}
+      CONTPAQI_USER: ${CONTPAQI_USER}
+      CONTPAQI_PWD: ${CONTPAQI_PWD}
+    depends_on:
+      - db
+    networks:
+      - red_trasquila
+
+  # Tu Frontend (React)
+  web:
+    build: ./reporter_frontend
+    restart: always
+    ports:
+      - "80:5173" # En el cliente usamos el puerto 80 directo (más fácil)
+    depends_on:
+      - api
+    networks:
+      - red_trasquila
+
+networks:
+  red_trasquila:
+    driver: bridge
