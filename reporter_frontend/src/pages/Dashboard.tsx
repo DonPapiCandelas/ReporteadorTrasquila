@@ -7,6 +7,7 @@ import { KpiCard } from "../components/KpiCard";
 import { VentasTable } from "../components/VentasTable";
 import { HourlyChart } from "../components/HourlyChart";
 import { TopProductsList } from "../components/TopProductsList";
+import { PaymentMethodsChart } from "../components/PaymentMethodsChart";
 
 import type {
     VentasProductoKpis,
@@ -14,13 +15,15 @@ import type {
     TopProducto,
     VentasPorSucursal,
     ProductoOpcion,
+    VentaPagoPorDia,
 } from "../types/reportes";
 
 import {
     fetchKpis,
     fetchHorasPico,
     fetchTopProductos,
-    fetchVentasPorSucursal
+    fetchVentasPorSucursal,
+    fetchVentasPagoPorDia
 } from "../api/dashboard";
 
 import {
@@ -40,6 +43,7 @@ export const Dashboard: React.FC = () => {
     const [horasPico, setHorasPico] = useState<any[]>([]);
     const [topProductos, setTopProductos] = useState<TopProducto[]>([]);
     const [sucursalesMesActual, setSucursalesMesActual] = useState<VentasPorSucursal[]>([]);
+    const [pagosPorDia, setPagosPorDia] = useState<VentaPagoPorDia[]>([]);
     const [rows, setRows] = useState<VentasProductoRow[]>([]);
 
     const [loadingTable, setLoadingTable] = useState(false);
@@ -101,16 +105,18 @@ export const Dashboard: React.FC = () => {
     const cargarDatosDashboard = async () => {
         try {
             const filtros = buildFilterParams(true);
-            const [kpisResp, horasResp, topResp, sucsResp] = await Promise.all([
+            const [kpisResp, horasResp, topResp, sucsResp, pagosResp] = await Promise.all([
                 fetchKpis(filtros),
                 fetchHorasPico(filtros),
                 fetchTopProductos(filtros),
-                fetchVentasPorSucursal(filtros)
+                fetchVentasPorSucursal(filtros),
+                fetchVentasPagoPorDia(filtros)
             ]);
             setKpis(kpisResp);
             setHorasPico(horasResp);
             setTopProductos(topResp);
             setSucursalesMesActual(sucsResp);
+            setPagosPorDia(pagosResp);
         } catch (err) { console.error(err); }
     };
 
@@ -382,7 +388,14 @@ export const Dashboard: React.FC = () => {
                                         label={s.sucursal ?? "Sin sucursal"}
                                         value={`$${s.total_vendido.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
                                         variant="simple"
-                                    />
+                                    >
+                                        <div className="grid grid-cols-2 gap-y-1 gap-x-2 text-[10px] text-text-muted mt-1">
+                                            <div className="flex justify-between"><span>Efectivo:</span> <span className="font-semibold text-text-main">${(s.total_efectivo || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}</span></div>
+                                            <div className="flex justify-between"><span>Tarjeta:</span> <span className="font-semibold text-text-main">${(s.total_tarjeta || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}</span></div>
+                                            <div className="flex justify-between"><span>Vales:</span> <span className="font-semibold text-text-main">${(s.total_vales || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}</span></div>
+                                            <div className="flex justify-between"><span>Transf:</span> <span className="font-semibold text-text-main">${(s.total_transferencia || 0).toLocaleString('es-MX', { maximumFractionDigits: 0 })}</span></div>
+                                        </div>
+                                    </KpiCard>
                                 ))}
                             </div>
                         </section>
@@ -399,14 +412,26 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </section>
                     )}
-                    <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
-                        <div className="lg:col-span-2 h-full">
-                            {horasPico.length > 0 ? <HourlyChart data={horasPico} /> : <div className="h-full flex items-center justify-center border border-dashed border-border rounded-xl text-text-muted">Sin datos de horarios</div>}
+
+                    {/* Sección de Gráficas */}
+                    <div id="charts-grid" className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                        {/* Gráfica de Pagos (NUEVA) */}
+                        <div className="w-full">
+                            {pagosPorDia.length > 0 ? <PaymentMethodsChart data={pagosPorDia} /> : <div className="h-[400px] flex items-center justify-center border border-dashed border-border rounded-xl text-text-muted">Sin datos de pagos</div>}
                         </div>
-                        <div className="h-full">
-                            {topProductos.length > 0 ? <TopProductsList data={topProductos} sucursalNombre={sucursal} /> : <div className="h-full flex items-center justify-center border border-dashed border-border rounded-xl text-text-muted">Sin datos Top</div>}
+
+                        {/* Gráfica de Horas */}
+                        <div className="w-full">
+                            {horasPico.length > 0 ? <HourlyChart data={horasPico} /> : <div className="h-[400px] flex items-center justify-center border border-dashed border-border rounded-xl text-text-muted">Sin datos de horarios</div>}
                         </div>
                     </div>
+
+                    <div className="mt-6">
+                        <h3 className="text-lg font-bold text-text-main mb-4">Top Productos</h3>
+                        {topProductos.length > 0 ? <TopProductsList data={topProductos} sucursalNombre={sucursal} /> : <div className="p-10 text-center border border-dashed border-border rounded-xl text-text-muted">Sin datos Top</div>}
+                    </div>
+
                     <div className="mt-8 text-center text-xs text-text-muted opacity-50">Generado por TrasquilaBI · {new Date().toLocaleDateString()}</div>
                 </div>
             )}

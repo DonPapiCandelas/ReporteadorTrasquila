@@ -5,6 +5,7 @@ import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AdminUsers } from "./pages/AdminUsers";
+import { TicketAnalysis } from "./pages/TicketAnalysis";
 
 /**
  * Componente principal de la aplicación.
@@ -29,6 +30,7 @@ const App: React.FC = () => {
         {/* Rutas Privadas (Protegidas por Login) */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/tickets" element={<TicketAnalysis />} />
           <Route path="/admin/users" element={<AdminUsers />} />
           {/* Redirigir la raíz '/' al dashboard (el guardia lo mandará a login si no hay sesión) */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

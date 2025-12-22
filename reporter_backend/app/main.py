@@ -6,7 +6,7 @@ import traceback
 import os
 
 # Importación de routers (controladores) de la API
-from app.api.v1 import ventas_producto, dashboard, auth, users
+from app.api.v1 import ventas_producto, dashboard, auth, users, tickets
 
 # Inicialización de la aplicación FastAPI
 app = FastAPI(title="Reportes Ventas Producto", version="1.0.0")
@@ -52,6 +52,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Autenticación"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Usuarios"])
 app.include_router(ventas_producto.router, prefix="/api/v1/ventas-producto", tags=["Ventas Producto"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(tickets.router, prefix="/api/v1/tickets", tags=["Tickets"])
 
 # --- ENDPOINT DE SALUD ---
 @app.get("/health", tags=["General"])

@@ -401,19 +401,117 @@ def resumen_por_sucursal_mes_actual(mes: Optional[int] = None, anio: Optional[in
         now = datetime.now()
         mes = mes or now.month
         anio = anio or now.year
+        
+        # Consulta basada en ZZTotalVentasXFPago pero filtrada por mes/año y agrupada por sucursal
         sql = """
-            SELECT ISNULL(sucursal, 'SIN SUCURSAL'), ISNULL(SUM(total_venta), 0) 
-            FROM zzVentasResumen WITH (NOLOCK) 
-            WHERE YEAR(fecha) = ? AND MONTH(fecha) = ? 
-            GROUP BY sucursal
-            ORDER BY 2 DESC
+            SELECT 
+                ISNULL(dbo.admAlmacenes.CNOMBREALMACEN, 'SIN SUCURSAL'),
+                SUM(dbo.CSI_venta_PC.fEfectivo + dbo.CSI_venta_PC.fDebito + dbo.CSI_venta_PC.fCredito + dbo.CSI_venta_PC.fVales + dbo.CSI_venta_PC.fTrans + dbo.CSI_venta_PC.fOtro) AS Total,
+                SUM(dbo.CSI_venta_PC.fEfectivo) AS Efectivo,
+                SUM(dbo.CSI_venta_PC.fDebito + dbo.CSI_venta_PC.fCredito) AS Tarjeta,
+                SUM(dbo.CSI_venta_PC.fVales) AS Vales,
+                SUM(dbo.CSI_venta_PC.fTrans) AS Transferencia,
+                SUM(dbo.CSI_venta_PC.fOtro) AS Otro
+            FROM dbo.CSI_venta_PC WITH (NOLOCK)
+            INNER JOIN dbo.admAlmacenes WITH (NOLOCK) ON dbo.CSI_venta_PC.CIDALMACEN = dbo.admAlmacenes.CIDALMACEN
+            WHERE YEAR(dbo.CSI_venta_PC.fecha) = ? AND MONTH(dbo.CSI_venta_PC.fecha) = ?
+            GROUP BY dbo.admAlmacenes.CNOMBREALMACEN
+            ORDER BY Total DESC
         """
         conn = get_connection()
         cur = conn.cursor()
         cur.execute(sql, [anio, mes])
         rows = cur.fetchall()
-        return [{"sucursal": r[0], "total_vendido": float(r[1])} for r in rows]
-    except Exception:
+        
+        resultados = []
+        for r in rows:
+            resultados.append({
+                "sucursal": r[0],
+                "total_vendido": float(r[1]),
+                "total_efectivo": float(r[2]),
+                "total_tarjeta": float(r[3]),
+                "total_vales": float(r[4]),
+                "total_transferencia": float(r[5]),
+                "total_otro": float(r[6])
+            })
+        return resultados
+
+    except Exception as e:
+        logger.error(f"RESUMEN SUCURSAL ERROR: {e}")
+        return []
+    finally:
+        if conn: conn.close()
+
+def obtener_ventas_pago_por_dia(filtros: "VentasProductoFiltros") -> List[Dict[str, Any]]:
+    conn = None
+    try:
+        # Reutilizamos la lógica de filtros pero ajustada para CSI_venta_PC
+        # Nota: _build_filtros_where está diseñada para zzVentasPorProducto o zzVentasResumen
+        # Aquí construiremos una WHERE simple manual para CSI_venta_PC
+        
+        condiciones = ["1=1"]
+        params = []
+        
+        if filtros.sucursal:
+             condiciones.append("dbo.admAlmacenes.CNOMBREALMACEN = ?")
+             params.append(filtros.sucursal.strip())
+             
+        if filtros.fecha_desde and filtros.fecha_hasta:
+             condiciones.append("dbo.CSI_venta_PC.fecha >= ? AND dbo.CSI_venta_PC.fecha < ?")
+             params.append(filtros.fecha_desde)
+             # Ajuste si fecha_hasta es string
+             if isinstance(filtros.fecha_hasta, str):
+                f_fin = datetime.strptime(filtros.fecha_hasta, "%Y-%m-%d").date() + timedelta(days=1)
+             else:
+                f_fin = filtros.fecha_hasta + timedelta(days=1)
+             params.append(f_fin)
+             
+        elif filtros.mes and filtros.anio:
+             condiciones.append("YEAR(dbo.CSI_venta_PC.fecha) = ? AND MONTH(dbo.CSI_venta_PC.fecha) = ?")
+             params.extend([filtros.anio, filtros.mes])
+             
+        elif filtros.anio:
+             condiciones.append("YEAR(dbo.CSI_venta_PC.fecha) = ?")
+             params.append(filtros.anio)
+
+        where_clause = " AND ".join(condiciones)
+
+        sql = f"""
+            SELECT 
+                dbo.CSI_venta_PC.fecha,
+                SUM(dbo.CSI_venta_PC.fEfectivo) AS Efectivo,
+                SUM(dbo.CSI_venta_PC.fDebito + dbo.CSI_venta_PC.fCredito) AS Tarjeta,
+                SUM(dbo.CSI_venta_PC.fVales) AS Vales,
+                SUM(dbo.CSI_venta_PC.fTrans) AS Transferencia,
+                SUM(dbo.CSI_venta_PC.fOtro) AS Otro,
+                SUM(dbo.CSI_venta_PC.fEfectivo + dbo.CSI_venta_PC.fDebito + dbo.CSI_venta_PC.fCredito + dbo.CSI_venta_PC.fVales + dbo.CSI_venta_PC.fTrans + dbo.CSI_venta_PC.fOtro) AS Total
+            FROM dbo.CSI_venta_PC WITH (NOLOCK)
+            INNER JOIN dbo.admAlmacenes WITH (NOLOCK) ON dbo.CSI_venta_PC.CIDALMACEN = dbo.admAlmacenes.CIDALMACEN
+            WHERE {where_clause}
+            GROUP BY dbo.CSI_venta_PC.fecha
+            ORDER BY dbo.CSI_venta_PC.fecha
+        """
+        
+        conn = get_connection()
+        cur = conn.cursor()
+        cur.execute(sql, params)
+        rows = cur.fetchall()
+        
+        resultados = []
+        for r in rows:
+            resultados.append({
+                "fecha": str(r[0]),
+                "total_efectivo": float(r[1]),
+                "total_tarjeta": float(r[2]),
+                "total_vales": float(r[3]),
+                "total_transferencia": float(r[4]),
+                "total_otro": float(r[5]),
+                "total_general": float(r[6])
+            })
+        return resultados
+
+    except Exception as e:
+        logger.error(f"VENTAS PAGO DIA ERROR: {e}")
         return []
     finally:
         if conn: conn.close()

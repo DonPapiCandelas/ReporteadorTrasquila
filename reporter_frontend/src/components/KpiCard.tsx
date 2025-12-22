@@ -11,6 +11,7 @@ interface KpiCardProps {
     variant?: 'simple' | 'solid';
     /** Color base opcional si es sólida */
     trendColor?: string;
+    children?: React.ReactNode;
 }
 
 /**
@@ -22,7 +23,8 @@ export const KpiCard: React.FC<KpiCardProps> = ({
     label,
     value,
     subtle,
-    variant = 'simple'
+    variant = 'simple',
+    children
 }) => {
 
     // Estilos base (Tailwind CSS)
@@ -59,6 +61,12 @@ export const KpiCard: React.FC<KpiCardProps> = ({
                     <span className={`text-xs font-medium px-2 py-1 rounded border ${subtleClasses}`}>
                         {subtle}
                     </span>
+                </div>
+            )}
+
+            {children && (
+                <div className="mt-4 border-t border-border pt-2">
+                    {children}
                 </div>
             )}
         </div>

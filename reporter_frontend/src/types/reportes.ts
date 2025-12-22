@@ -46,6 +46,21 @@ export interface TopProducto {
 export interface VentasPorSucursal {
     sucursal: string | null;
     total_vendido: number;
+    total_efectivo?: number;
+    total_tarjeta?: number;
+    total_vales?: number;
+    total_transferencia?: number;
+    total_otro?: number;
+}
+
+export interface VentaPagoPorDia {
+    fecha: string;
+    total_efectivo: number;
+    total_tarjeta: number;
+    total_vales: number;
+    total_transferencia: number;
+    total_otro: number;
+    total_general: number;
 }
 
 // Si usaste 'any' en el dashboard no necesitas este, pero es buena práctica tenerlo

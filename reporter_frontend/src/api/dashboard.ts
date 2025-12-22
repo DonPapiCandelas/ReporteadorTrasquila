@@ -4,6 +4,7 @@ import type {
     VentasProductoKpis,
     TopProducto,
     VentasPorSucursal,
+    VentaPagoPorDia,
     // Puedes importar VentaPorHoraItem si lo definiste en types, si no usa any
 } from "../types/reportes";
 
@@ -35,6 +36,14 @@ export async function fetchVentasPorSucursal(params?: Record<string, unknown>) {
 export async function fetchHorasPico(params?: Record<string, unknown>) {
     const res = await apiClient.get<any[]>(
         "/api/v1/dashboard/horas-pico",
+        { params }
+    );
+    return res.data;
+}
+
+export async function fetchVentasPagoPorDia(params?: Record<string, unknown>) {
+    const res = await apiClient.get<VentaPagoPorDia[]>(
+        "/api/v1/dashboard/pagos-por-dia",
         { params }
     );
     return res.data;

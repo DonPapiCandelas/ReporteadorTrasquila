@@ -40,6 +40,20 @@ class VentasProductoFiltros(BaseModel):
 class VentasPorSucursalItem(BaseModel):
     sucursal: Optional[str]
     total_vendido: float
+    total_efectivo: float = 0.0
+    total_tarjeta: float = 0.0
+    total_vales: float = 0.0
+    total_transferencia: float = 0.0
+    total_otro: float = 0.0
+
+class VentaPagoPorDiaItem(BaseModel):
+    fecha: str
+    total_efectivo: float
+    total_tarjeta: float
+    total_vales: float
+    total_transferencia: float
+    total_otro: float
+    total_general: float
 
 # --- CLASES NUEVAS QUE FALTABAN ---
 

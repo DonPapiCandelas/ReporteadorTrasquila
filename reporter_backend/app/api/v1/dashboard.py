@@ -13,8 +13,19 @@ from app.reports.ventas_producto_service import (
     resumen_por_sucursal_mes_actual,
     obtener_ventas_por_hora,
     top_productos,
+    obtener_ventas_pago_por_dia
 )
 from app.api.deps import get_current_user
+
+# Fix imports in case they weren't added at the top
+from app.schemas.reports import (
+    VentasProductoKpis,
+    VentasPorSucursalItem,
+    VentasProductoFiltros,
+    VentaPorHoraItem,
+    TopProducto,
+    VentaPagoPorDiaItem
+)
 
 router = APIRouter()
 
@@ -117,3 +128,26 @@ def get_top_productos(
         anio=anio
     )
     return top_productos(filtros)
+
+@router.get("/pagos-por-dia", response_model=List[VentaPagoPorDiaItem])
+def get_pagos_por_dia(
+    sucursal: Optional[str] = Query(None),
+    mes: Optional[int] = Query(None, ge=1, le=12),
+    anio: Optional[int] = Query(None),
+    fecha_desde: Optional[str] = Query(None),
+    fecha_hasta: Optional[str] = Query(None),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Obtiene el desglose de ventas por forma de pago agrupado por día.
+    """
+    sucursal_segura = aplicar_candado(sucursal, current_user)
+    
+    filtros = VentasProductoFiltros(
+        sucursal=sucursal_segura,
+        mes=mes,
+        anio=anio,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta
+    )
+    return obtener_ventas_pago_por_dia(filtros)

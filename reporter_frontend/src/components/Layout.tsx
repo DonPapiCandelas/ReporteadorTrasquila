@@ -20,7 +20,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
     // Nota: Los items que no tienen ruta real apuntan a "/dashboard" temporalmente
     const menuItems = [
         { icon: "📊", label: "Dashboard General", path: "/dashboard" },
-        { icon: "🎫", label: "Análisis de Tickets", path: "/dashboard" }, // Placeholder
+        { icon: "🎫", label: "Análisis de Tickets", path: "/tickets" },
         { icon: "⏰", label: "Horas Pico", path: "/dashboard" },        // Placeholder
         { icon: "📦", label: "Inventario", path: "/dashboard" },        // Placeholder
         { icon: "⚙️", label: "Configuración", path: "/dashboard" },     // Placeholder
